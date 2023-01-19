@@ -6,11 +6,13 @@ int data[4], prevData[4]; // arrays to store data from the ir sensors
 int vt = 7,d0 = 8,d1 = 9,d2 = 10,d3 = 11; //pins connected to ht12d
 int index = 0;
 String dataText = "";
+char temptxt[16];
 
 void setup() {
   lcd.begin(); //initialize the lcd
-  //lcd.backlight(); //turn on the lcd backlight
   lcd.home();
+  //lcd.backlight(); //turn on the lcd backlight
+
   pinMode(vt, INPUT); //set vt pin as input
   pinMode(d0, INPUT); //set d0 pin as input
   pinMode(d1, INPUT); //set d1 pin as input
@@ -38,13 +40,17 @@ void loop() {
       index = 0;
     }
   }else {dataText="RF ERROR!       ";}
-  delay(1000);  // wait for 400 milliseconds
-  lcd.clear(); //clear the lcd
-  lcd.print("IR Sensor Data:"); //print the title on the first line of lcd
+
 
   lcd.setCursor(0,1); //set cursor to second line
   if(index+16 < dataText.length()){
-    lcd.print(dataText.substring(index, index+16));
+
+    for (int i=0; i<16; i++) {
+      temptxt[i]=dataText[index+i];
+    }
+    lcd.print(temptxt);delay(200);
+    
+    //lcd.print(dataText.substring(index, index+16));
     index += 1;
   }else{
     lcd.print(dataText.substring(index));
