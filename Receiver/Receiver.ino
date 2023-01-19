@@ -10,9 +10,12 @@ char temptxt[16];
 
 void setup() {
   lcd.begin(); //initialize the lcd
-  lcd.home();
-  //lcd.backlight(); //turn on the lcd backlight
-
+  // lcd.home();
+  lcd.backlight(); //turn on the lcd backlight
+  lcd.setCursor(4,0);
+  lcd.print("bootUp!");
+  delay(2000);
+  lcd.clear();
   pinMode(vt, INPUT); //set vt pin as input
   pinMode(d0, INPUT); //set d0 pin as input
   pinMode(d1, INPUT); //set d1 pin as input
@@ -42,19 +45,24 @@ void loop() {
   }else {dataText="RF ERROR!       ";}
 
 
-  lcd.setCursor(0,1); //set cursor to second line
+   //set cursor to second line
+   delay(500);
   if(index+16 < dataText.length()){
 
-    for (int i=0; i<16; i++) {
-      temptxt[i]=dataText[index+i];
-    }
-    lcd.print(temptxt);delay(200);
+    // for (int i=0; i<16; i++) {
+    //   temptxt[i]=dataText[index+i];
+    // }delay(1000);lcd.clear();
+    // lcd.println(temptxt);
     
-    //lcd.print(dataText.substring(index, index+16));
+    lcd.clear();
+    lcd.setCursor(0,1);
+    lcd.print(dataText.substring(index, index+16));
     index += 1;
   }else{
+    lcd.clear();
+    lcd.setCursor(0,1);
     lcd.print(dataText.substring(index));
     index = 0;
   }
-  
+  delay(500);
 }
