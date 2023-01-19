@@ -9,6 +9,7 @@ int vt = 7, d0 = 8, d1 = 9, d2 = 10, d3 = 11, index = 0;  //pins connected to ht
 String dataText = "", dataTimer = "";
 
 void setup() {
+  Serial.begin(9600);
   lcd.begin();  //initialize the lcd
   // lcd.home();
   lcd.backlight();  //turn on the lcd backlight
@@ -23,11 +24,15 @@ void setup() {
   pinMode(d3, INPUT);  //set d3 pin as input
 }
 String formatElapsedTime(unsigned long elapsed_time) {
-  int hours = (int)(elapsed_time / (60 * 60 * 1000));
-  int minutes = (int)((elapsed_time % (60 * 60 * 1000)) / (60 * 1000));
-  int seconds = (int)((elapsed_time % (60 * 1000)) / 1000);
+  unsigned long seconds = elapsed_time / 1000;
+  unsigned long minutes = seconds / 60;
+  unsigned long hours = minutes / 60;
+  seconds %= 60;
+  minutes %= 60;
+  hours %= 24;
+  
   // int milliseconds = elapsed_time % 1000;
-  return String(hours) + ":" + String(minutes) + ":" + String(seconds) /*+":" + String(milliseconds)*/;
+  return String(hours) + ":" + String(minutes) + ":" + String(seconds);
 }
 void loop() {
   if (digitalRead(vt) == HIGH) {  // check if VT pin is high
@@ -37,7 +42,9 @@ void loop() {
     data[3] = digitalRead(d3);    //read data from the fourth ir sensor
 
     bool update_display = false;
+    dataText = "";
     for (int i = 0; i < 4; i++) {
+      
       if (data[i] != prevData[i]) {
         update_display = true;
         prevData[i] = data[i];
@@ -54,14 +61,14 @@ void loop() {
         }
       }
     }
-    if (millis() - prev_time >= 3000) {  // check if one minute has passed
+    if (millis() - prev_time >= 1001) {  // check if one minute has passed
       prev_time = millis();
-      if (sensor_time[0] == 0 && sensor_time[1] == 0 && sensor_time[2] == 0 && sensor_time[3] == 0) { dataTimer = ""; }
+      dataTimer = "";
       for (int i = 0; i < 4; i++) {
         if (sensor_time[i] != 0) {
           unsigned long elapsed_time = millis() - sensor_time[i];
           dataTimer += "Mail" + String(i + 1) + ": " + formatElapsedTime(elapsed_time) + " ";
-        } else dataTimer += "Mail" + String(i + 1) + ": " + "0" + " ";
+        } else dataTimer += " ";
       }
     }
     if (update_display) {
@@ -71,7 +78,7 @@ void loop() {
     dataText = "RF ERROR!       ";
   }
   delay(500);
-  if (index + 16 < dataText.length() + dataTimer.length()) {
+  if (index + 16 < dataText.length()||index + 16 < dataTimer.length()) {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print(dataTimer.substring(index, index + 16));
