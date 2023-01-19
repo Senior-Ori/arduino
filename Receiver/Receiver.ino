@@ -1,5 +1,6 @@
 #include <LiquidCrystal_I2C.h>
 
+
 LiquidCrystal_I2C lcd(0x27,16,2); //initialize i2c lcd with address 0x27 and 16*2 lcd
 int data[4], prevData[4]; // arrays to store data from the ir sensors
 int vt = 7,d0 = 8,d1 = 9,d2 = 10,d3 = 11; //pins connected to ht12d
