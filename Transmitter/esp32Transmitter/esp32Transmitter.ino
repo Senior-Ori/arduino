@@ -8,11 +8,32 @@ TaskHandle_t getTimeTaskHandle;
 TaskHandle_t postTimeTaskHandle;
 TaskHandle_t checkSensorsTaskHandle;
 
-// Replace these with your sensor pins
-const int sensorPins[] = {32, 33, 34, 35};
-const int numSensors = sizeof(sensorPins) / sizeof(sensorPins[0]);
+/** DEFINE GIOS**/
+#define IR_SENSOR_1 32
+#define IR_SENSOR_2 33
+#define IR_SENSOR_3 34
+#define IR_SENSOR_4 35
+#define HT12E_D0 18
+#define HT12E_D1 19
+#define HT12E_D2 21
+#define HT12E_D3 22
+#define HT12E_TE 23
 
-int prevSensorValues[numSensors];
+/** DEFINES **/
+#define MAX_FAILURES 10
+
+/** GLOBALS **/
+int ir_sensor_data[4] = {0, 0, 0, 0};
+int previous_ir_sensor_data[4] = {-1, -1, -1, -1};
+bool changed = true;
+
+// Replace these with your sensor pins
+// const int sensorPins[] = {32, 33, 34, 35};
+// const int numSensors = sizeof(sensorPins) / sizeof(sensorPins[0]);
+
+// int prevSensorValues[numSensors];
+
+
 
 void setup() {
   Serial.begin(115200);
@@ -34,23 +55,23 @@ void setup() {
        Serial.print("\npassword: ");
        Serial.println(password.c_str());
        
-       xTaskCreate(
-         getTimeTask,
-         "GetTime",
-         10000,
-         NULL,
-         1,
-         &getTimeTaskHandle
-       );
+      //  xTaskCreate(
+      //    getTimeTask,
+      //    "GetTime",
+      //    10000,
+      //    NULL,
+      //    1,
+      //    &getTimeTaskHandle
+      //  );
        
-       xTaskCreate(
-         postTimeTask,
-         "PostTime",
-         10000,
-         NULL,
-        1 ,
-        &postTimeTaskHandle
-      );
+      //  xTaskCreate(
+      //    postTimeTask,
+      //    "PostTime",
+      //    10000,
+      //    NULL,
+      //   1 ,
+      //   &postTimeTaskHandle
+      // );
       
       xTaskCreate(
         checkSensorsTask,
@@ -82,23 +103,23 @@ void setup() {
   preferences.putString("ssid", ssid);
   preferences.putString("password", password);
 
-   xTaskCreate(
-     getTimeTask,
-     "GetTime",
-     10000,
-     NULL,
-     1,
-     &getTimeTaskHandle
-   );
+  //  xTaskCreate(
+  //    getTimeTask,
+  //    "GetTime",
+  //    10000,
+  //    NULL,
+  //    1,
+  //    &getTimeTaskHandle
+  //  );
    
-   xTaskCreate(
-     postTimeTask,
-     "PostTime",
-     10000,
-     NULL,
-    1 ,
-    &postTimeTaskHandle
-   );
+  //  xTaskCreate(
+  //    postTimeTask,
+  //    "PostTime",
+  //    10000,
+  //    NULL,
+  //   1 ,
+  //   &postTimeTaskHandle
+  //  );
    
    xTaskCreate(
     checkSensorsTask,
@@ -179,7 +200,7 @@ void postTimeTask(void * parameter) {
 
 void checkSensorsTask(void * parameter) {
   for (;;) {
-     bool changed = false;
+     changed = false;
     
     for (int i=0; i<numSensors; i++) {
       int sensorValue = digitalRead(sensorPins[i]);
