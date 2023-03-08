@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <Preferences.h>
+#include <HTTPClient.h>
 
 Preferences preferences;
 
@@ -14,6 +15,7 @@ void setup() {
     WiFi.begin(ssid.c_str(), password.c_str());
     if (WiFi.waitForConnectResult() == WL_CONNECTED) {
       Serial.println("Connected to WiFi using saved credentials.");
+      getTime();
       return;
     }
   }
@@ -34,7 +36,24 @@ void setup() {
   
   preferences.putString("ssid", ssid);
   preferences.putString("password", password);
+
+   getTime();
 }
 
 void loop() {
+}
+
+void getTime() {
+   HTTPClient http;
+   http.begin("http://worldtimeapi.org/api/ip");
+   int httpCode = http.GET();
+
+   if (httpCode >0) {
+     String payload = http.getString();
+     Serial.println(payload);
+   } else {
+     Serial.println("Error getting time");
+   }
+
+   http.end();
 }
