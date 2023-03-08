@@ -25,6 +25,7 @@ TaskHandle_t checkSensorsTaskHandle;
 /** GLOBALS **/
 int ir_sensor_data[4] = {0, 0, 0, 0};
 int previous_ir_sensor_data[4] = {-1, -1, -1, -1};
+String ir_times[]= {"0","0","0","0"};
 bool isChanged = true;
 
 // Replace these with your sensor pins
@@ -37,7 +38,11 @@ const int numSensors = sizeof(ir_sensor_data) / sizeof(ir_sensor_data[0]);
 
 void setup() {
   Serial.begin(115200);
-  
+  pinMode(IR_SENSOR_1, INPUT);
+  pinMode(IR_SENSOR_2, INPUT);
+  pinMode(IR_SENSOR_3, INPUT);
+  pinMode(IR_SENSOR_4, INPUT);
+
   preferences.begin("wifi", false);
   String ssid = preferences.getString("ssid", "");
   String password = preferences.getString("password", "");
@@ -205,28 +210,61 @@ void checkSensorsTask(void * parameter) {
     ir_sensor_data[1] = digitalRead(IR_SENSOR_2);
     ir_sensor_data[2] = digitalRead(IR_SENSOR_3);
     ir_sensor_data[3] = digitalRead(IR_SENSOR_4);
-    
-    for (int i=0; i<numSensors; i++) {
-      
-      if (ir_sensor_data[i] != previous_ir_sensor_data[i]) {
-        isChanged = true;
-        break;
-      }
+    Serial.println("sensors has been initialized");
+    Serial.print("\n[");
+    Serial.print(ir_sensor_data[0]);Serial.print(",");
+    Serial.print(ir_sensor_data[1]);Serial.print(",");
+    Serial.print(ir_sensor_data[2]);Serial.print(",");
+    Serial.print(ir_sensor_data[3]);Serial.print("]\n");
+    for (int i=0; i<numSensors; i++)
+    if (ir_sensor_data[i] != previous_ir_sensor_data[i]) {
+      isChanged = true;
     }
     
     if (isChanged) {
       // Call function to send POST request with current sensor values
-      for (int i=0; i<numSensors; i++) {
-        previous_ir_sensor_data[i] = ir_sensor_data[i];
-      }   
-      sendPostWithSensorValues(ir_sensor_data);
+
+      // sensor values has been changed
+      Serial.println("sensor values has been changed");
+      previous_ir_sensor_data[0] = ir_sensor_data[0];
+      previous_ir_sensor_data[1] = ir_sensor_data[1];
+      previous_ir_sensor_data[2] = ir_sensor_data[2];
+      previous_ir_sensor_data[3] = ir_sensor_data[3];
+
+
+      
+      sendPostWithSensorValues();
     }
     
-    vTaskDelay(50 / portTICK_PERIOD_MS); // Delay for 50 milliseconds
+    vTaskDelay(1300 / portTICK_PERIOD_MS); // Delay for 50 milliseconds
   }
 }
 
-void sendPostWithSensorValues(int sensorValues[]) {
+void sendPostWithSensorValues() {
+   HTTPClient http;
+     http.begin("http://worldtimeapi.org/api/ip");
+     int httpCode = http.GET();
+     
+      int retries =0 ;
+     
+      while (httpCode <=0 && retries <3) {
+       Serial.println("Error getting time. Retrying...");
+       delay(1000);
+       httpCode = http.GET();
+       retries++;
+      }
+      String payload="";
+      if (httpCode >0) {
+        payload = http.getString();
+        Serial.println(payload);
+      } else {
+        Serial.println("Error getting time after three attempts.");
+        payload ="Error getting time after three attempts.";
+      }
+
+      http.end();
+      
+
   // Create JSON object with sensor values
   String json = "{";
   
@@ -234,8 +272,19 @@ void sendPostWithSensorValues(int sensorValues[]) {
     json += "\"sensor";
     json += String(i+1);
     json += "\":";
-    json += String(sensorValues[i]);
-    
+    json += "[";
+    json += String(ir_sensor_data[i]);
+    json += ",";
+    if (ir_sensor_data[i]) {
+    ir_times[i]="0";
+    json += "0";
+    }else if(ir_times[i]=="0"){
+      ir_times[i]=String(payload);
+      json += String(ir_times[i]);
+    }else{
+      json += String(ir_times[i]);
+    }
+    json += "]";
     if (i < numSensors-1) {
       json += ",";
      }
