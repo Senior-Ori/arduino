@@ -25,11 +25,11 @@ TaskHandle_t checkSensorsTaskHandle;
 /** GLOBALS **/
 int ir_sensor_data[4] = {0, 0, 0, 0};
 int previous_ir_sensor_data[4] = {-1, -1, -1, -1};
-bool changed = true;
+bool isChanged = true;
 
 // Replace these with your sensor pins
 // const int sensorPins[] = {32, 33, 34, 35};
-// const int numSensors = sizeof(sensorPins) / sizeof(sensorPins[0]);
+const int numSensors = sizeof(ir_sensor_data) / sizeof(ir_sensor_data[0]);
 
 // int prevSensorValues[numSensors];
 
@@ -42,9 +42,9 @@ void setup() {
   String ssid = preferences.getString("ssid", "");
   String password = preferences.getString("password", "");
   
-  for (int i=0; i<numSensors; i++) {
-    prevSensorValues[i] = -1;
-   }
+  // for (int i=0; i<numSensors; i++) {
+  //   prevSensorValues[i] = -1;
+  //  }
   
    if (ssid.length() >0) {
      WiFi.begin(ssid.c_str(), password.c_str());
@@ -200,20 +200,26 @@ void postTimeTask(void * parameter) {
 
 void checkSensorsTask(void * parameter) {
   for (;;) {
-     changed = false;
+    isChanged = false;
+    ir_sensor_data[0] = digitalRead(IR_SENSOR_1);
+    ir_sensor_data[1] = digitalRead(IR_SENSOR_2);
+    ir_sensor_data[2] = digitalRead(IR_SENSOR_3);
+    ir_sensor_data[3] = digitalRead(IR_SENSOR_4);
     
     for (int i=0; i<numSensors; i++) {
-      int sensorValue = digitalRead(sensorPins[i]);
       
-      if (sensorValue != prevSensorValues[i]) {
-        changed = true;
-        prevSensorValues[i] = sensorValue;
+      if (ir_sensor_data[i] != previous_ir_sensor_data[i]) {
+        isChanged = true;
+        break;
       }
     }
     
-    if (changed) {
+    if (isChanged) {
       // Call function to send POST request with current sensor values
-      sendPostWithSensorValues(prevSensorValues);
+      for (int i=0; i<numSensors; i++) {
+        previous_ir_sensor_data[i] = ir_sensor_data[i];
+      }   
+      sendPostWithSensorValues(ir_sensor_data);
     }
     
     vTaskDelay(50 / portTICK_PERIOD_MS); // Delay for 50 milliseconds
@@ -234,7 +240,7 @@ void sendPostWithSensorValues(int sensorValues[]) {
       json += ",";
      }
    }
-  
+  // Finish JSON object
    json += "}";
   
    Serial.println(json);
