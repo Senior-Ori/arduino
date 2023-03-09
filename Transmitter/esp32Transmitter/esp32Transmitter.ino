@@ -9,10 +9,10 @@ TaskHandle_t postTimeTaskHandle;
 TaskHandle_t checkSensorsTaskHandle;
 
 /** DEFINE GIOS**/
-#define IR_SENSOR_1 32
-#define IR_SENSOR_2 33
-#define IR_SENSOR_3 34
-#define IR_SENSOR_4 35
+#define IR_SENSOR_0 32
+#define IR_SENSOR_1 33
+#define IR_SENSOR_2 34
+#define IR_SENSOR_3 35
 #define HT12E_D0 18
 #define HT12E_D1 19
 #define HT12E_D2 21
@@ -38,10 +38,16 @@ const int numSensors = sizeof(ir_sensor_data) / sizeof(ir_sensor_data[0]);
 
 void setup() {
   Serial.begin(115200);
+  pinMode(IR_SENSOR_0, INPUT);
   pinMode(IR_SENSOR_1, INPUT);
   pinMode(IR_SENSOR_2, INPUT);
   pinMode(IR_SENSOR_3, INPUT);
-  pinMode(IR_SENSOR_4, INPUT);
+  pinMode(HT12E_D0, OUTPUT);
+  pinMode(HT12E_D1, OUTPUT);
+  pinMode(HT12E_D2, OUTPUT);
+  pinMode(HT12E_D3, OUTPUT);
+  pinMode(HT12E_TE, OUTPUT);
+  
 
   preferences.begin("wifi", false);
   String ssid = preferences.getString("ssid", "");
@@ -206,10 +212,10 @@ void postTimeTask(void * parameter) {
 void checkSensorsTask(void * parameter) {
   for (;;) {
     isChanged = false;
-    ir_sensor_data[0] = digitalRead(IR_SENSOR_1);
-    ir_sensor_data[1] = digitalRead(IR_SENSOR_2);
-    ir_sensor_data[2] = digitalRead(IR_SENSOR_3);
-    ir_sensor_data[3] = digitalRead(IR_SENSOR_4);
+    ir_sensor_data[0] = digitalRead(IR_SENSOR_0);
+    ir_sensor_data[1] = digitalRead(IR_SENSOR_1);
+    ir_sensor_data[2] = digitalRead(IR_SENSOR_2);
+    ir_sensor_data[3] = digitalRead(IR_SENSOR_3);
     Serial.println("sensors has been initialized");
     Serial.print("\n[");
     Serial.print(ir_sensor_data[0]);Serial.print(",");
@@ -221,6 +227,16 @@ void checkSensorsTask(void * parameter) {
       isChanged = true;
     }
     
+      //RF UPDATE VALUES (Send data to ht12e)
+      digitalWrite(HT12E_D0,ir_sensor_data[0]);
+      digitalWrite(HT12E_D1,ir_sensor_data[1]);
+      digitalWrite(HT12E_D2,ir_sensor_data[2]);
+      digitalWrite(HT12E_D3,ir_sensor_data[3]);
+      // Trigger data transmission
+      digitalWrite(HT12E_TE, HIGH);
+      vTaskDelay(10 / portTICK_PERIOD_MS);
+      digitalWrite(HT12E_TE, LOW);      
+    
     if (isChanged) {
       // Call function to send POST request with current sensor values
 
@@ -231,12 +247,11 @@ void checkSensorsTask(void * parameter) {
       previous_ir_sensor_data[2] = ir_sensor_data[2];
       previous_ir_sensor_data[3] = ir_sensor_data[3];
 
-
       
       sendPostWithSensorValues();
     }
     
-    vTaskDelay(1300 / portTICK_PERIOD_MS); // Delay for 50 milliseconds
+    vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay for 50 milliseconds
   }
 }
 
