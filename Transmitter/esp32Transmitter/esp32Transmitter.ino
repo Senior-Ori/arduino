@@ -13,6 +13,9 @@ TaskHandle_t checkSensorsTaskHandle;
 #define IR_SENSOR_1 33
 #define IR_SENSOR_2 34
 #define IR_SENSOR_3 35
+
+#define LED_FLAG 27
+
 #define HT12E_D0 18
 #define HT12E_D1 19
 #define HT12E_D2 21
@@ -20,7 +23,7 @@ TaskHandle_t checkSensorsTaskHandle;
 #define HT12E_TE 23
 
 /** DEFINES **/
-#define MAX_FAILURES 10
+#define MAX_FAILURES 6
 
 /** GLOBALS **/
 int ir_sensor_data[4] = {0, 0, 0, 0};
@@ -42,6 +45,7 @@ void setup() {
   pinMode(IR_SENSOR_1, INPUT);
   pinMode(IR_SENSOR_2, INPUT);
   pinMode(IR_SENSOR_3, INPUT);
+  pinMode(LED_FLAG, OUTPUT);
   pinMode(HT12E_D0, OUTPUT);
   pinMode(HT12E_D1, OUTPUT);
   pinMode(HT12E_D2, OUTPUT);
@@ -65,24 +69,6 @@ void setup() {
        Serial.print(ssid.c_str());
        Serial.print("\npassword: ");
        Serial.println(password.c_str());
-       
-      //  xTaskCreate(
-      //    getTimeTask,
-      //    "GetTime",
-      //    10000,
-      //    NULL,
-      //    1,
-      //    &getTimeTaskHandle
-      //  );
-       
-      //  xTaskCreate(
-      //    postTimeTask,
-      //    "PostTime",
-      //    10000,
-      //    NULL,
-      //   1 ,
-      //   &postTimeTaskHandle
-      // );
       
       xTaskCreate(
         checkSensorsTask,
@@ -101,12 +87,15 @@ void setup() {
    WiFi.beginSmartConfig();
   
    while (!WiFi.smartConfigDone()) {
+     digitalWrite(LED_FLAG, HIGH);
      delay(500);
+     digitalWrite(LED_FLAG, LOW);
      Serial.print(".");
    }
   
    Serial.println("");
    Serial.println("SmartConfig received.");
+   digitalWrite(LED_FLAG, LOW);
   
    ssid = WiFi.SSID();
    password = WiFi.psk();
@@ -182,7 +171,7 @@ void sendPostWithSensorValues() {
      
       int retries =0 ;
      
-      while (httpCode <=0 && retries <3) {
+      while (httpCode <=0 && retries < MAX_FAILURES) {
        Serial.println("Error getting time. Retrying...");
        delay(1000);
        httpCode = http.GET();
@@ -194,7 +183,7 @@ void sendPostWithSensorValues() {
         Serial.println(payload);
       } else {
         Serial.println("Error getting time after three attempts.");
-        payload ="Error getting time after three attempts.";
+        payload ="\"Error getting time after three attempts.\"";
       }
 
       http.end();
@@ -253,5 +242,6 @@ void sendPostWithSensorValues() {
       http.end();
    } else {
      Serial.println("WiFi Disconnected");
+     digitalWrite(LED_FLAG, HIGH);
    }
 }
