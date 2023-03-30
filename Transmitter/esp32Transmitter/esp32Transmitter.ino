@@ -23,7 +23,7 @@ TaskHandle_t checkSensorsTaskHandle;
 #define HT12E_TE 23
 
 /** DEFINES **/
-#define MAX_FAILURES 6
+#define MAX_FAILURES 14 //max retries get time now!
 
 /** GLOBALS **/
 int ir_sensor_data[4] = {0, 0, 0, 0};
@@ -125,12 +125,12 @@ void checkSensorsTask(void * parameter) {
     ir_sensor_data[1] = digitalRead(IR_SENSOR_1);
     ir_sensor_data[2] = digitalRead(IR_SENSOR_2);
     ir_sensor_data[3] = digitalRead(IR_SENSOR_3);
-    //Serial.println("sensors has been initialized");
-    //Serial.print("\n[");
-    //Serial.print(ir_sensor_data[0]);Serial.print(",");
-    //Serial.print(ir_sensor_data[1]);Serial.print(",");
-    //Serial.print(ir_sensor_data[2]);Serial.print(",");
-    //Serial.print(ir_sensor_data[3]);Serial.print("]\n");
+    Serial.println("sensors has been initialized");
+    Serial.print("\n[");
+    Serial.print(ir_sensor_data[0]);Serial.print(",");
+    Serial.print(ir_sensor_data[1]);Serial.print(",");
+    Serial.print(ir_sensor_data[2]);Serial.print(",");
+    Serial.print(ir_sensor_data[3]);Serial.print("]\n");
     for (int i=0; i<numSensors; i++)
     if (ir_sensor_data[i] != previous_ir_sensor_data[i]) {
       isChanged = true;
@@ -170,10 +170,14 @@ void sendPostWithSensorValues() {
      int httpCode = http.GET();
      
       int retries =0 ;
-     
+     int j=10;
       while (httpCode <=0 && retries < MAX_FAILURES) {
        Serial.println("Error getting time. Retrying...");
-       delay(1000);
+       
+       delay(j);
+       j=(j+10)*2;
+       if(j>720) j=100;
+       Serial.println(j);
        httpCode = http.GET();
        retries++;
       }
