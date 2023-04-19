@@ -9,18 +9,18 @@ TaskHandle_t postTimeTaskHandle;
 TaskHandle_t checkSensorsTaskHandle;
 
 /** DEFINE GIOS**/
-#define IR_SENSOR_0 32
-#define IR_SENSOR_1 33
-#define IR_SENSOR_2 34
-#define IR_SENSOR_3 35
+#define IR_SENSOR_0 34
+#define IR_SENSOR_1 35
+#define IR_SENSOR_2 32
+#define IR_SENSOR_3 33
 
-#define LED_FLAG 27
+#define LED_FLAG 14
 
-#define HT12E_D0 18
-#define HT12E_D1 19
-#define HT12E_D2 21
-#define HT12E_D3 22
-#define HT12E_TE 23
+#define HT12E_D0 25
+#define HT12E_D1 26
+#define HT12E_D2 27
+#define HT12E_D3 12
+#define HT12E_TE 13
 
 /** DEFINES **/
 #define MAX_FAILURES 14 //max retries get time now!
