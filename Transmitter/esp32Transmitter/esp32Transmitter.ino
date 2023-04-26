@@ -35,7 +35,9 @@ String payload;
 /** Timers **/
 unsigned long int unixtime;
 unsigned long int msCounter;
+int raw_offset;
 String unixtimeStr;
+String raw_offsetStr;
 
 
 // Replace these with your sensor pins
@@ -78,40 +80,49 @@ void setup() {
       Serial.println(password.c_str());
 
 
-      //receive time now!
-      HTTPClient http;
-      http.begin("http://worldtimeapi.org/api/ip");
-      int httpCode = http.GET();
+       //receive time now!
+  HTTPClient http;
+  http.begin("http://worldtimeapi.org/api/ip");
+  int httpCode = http.GET();
 
-      int retries = 0;
-      int j = 10;
-      while (httpCode <= 0 && retries < MAX_FAILURES) {
-        Serial.println("Error getting time. Retrying...");
+  int retries = 0;
+  int j = 10;
+  while (httpCode <= 0 && retries < MAX_FAILURES) {
+    Serial.println("Error getting time. Retrying...");
 
-        delay(j);
-        j = (j + 10) * 2;
-        if (j > 720) j = 100;
-        Serial.println(j);
-        httpCode = http.GET();
-        retries++;
-      }
-      payload = "";
-      if (httpCode > 0) {
+    delay(j);
+    j = (j + 10) * 2;
+    if (j > 720) j = 100;
+    Serial.println(j);
+    httpCode = http.GET();
+    retries++;
+  }
+  payload = "";
+  if (httpCode > 0) {
 
-        payload = http.getString();
-        unixtimeStr = payload.substring(payload.indexOf("\"unixtime\":") + 11);  // extract the value of the "unixtime" key
-        unixtimeStr = unixtimeStr.substring(0, unixtimeStr.indexOf(','));        // remove the comma and any other characters after it
-        unixtime = unixtimeStr.toInt();                                          // convert the string to an integer
-        unixtime = unixtime + millis();
-        Serial.println(payload);
-        Serial.println(unixtimeStr);
-        Serial.println(unixtime);
+    payload = http.getString();
+    unixtimeStr = payload.substring(payload.indexOf("\"unixtime\":") + 11);  // extract the value of the "unixtime" key
+    unixtimeStr = unixtimeStr.substring(0, unixtimeStr.indexOf(','));        // remove the comma and any other characters after it
+    unixtime = unixtimeStr.toInt();                                          // convert the string to an integer
+    millis();
+    raw_offsetStr = payload.substring(payload.indexOf("\"raw_offset\":") + 13);
+    raw_offsetStr = raw_offsetStr.substring(0, raw_offsetStr.indexOf(','));  
+    raw_offset= raw_offsetStr.toInt();
 
-      } else {
-        Serial.println("Error getting time after three attempts.");
-        payload = "\"Error getting time after three attempts.\"";
-      }
+    Serial.println(payload);
+    
+    Serial.println(unixtimeStr);
+    Serial.print("raw_offset:");
+    Serial.println(raw_offset);
+    Serial.print("unixtime:");
+    Serial.println(unixtime);
 
+  } else {
+    Serial.println("Error getting time after three attempts.");
+    payload = "\"Error getting time after three attempts.\"";
+  }
+
+  http.end();
 
 
 
@@ -172,9 +183,17 @@ void setup() {
     unixtimeStr = payload.substring(payload.indexOf("\"unixtime\":") + 11);  // extract the value of the "unixtime" key
     unixtimeStr = unixtimeStr.substring(0, unixtimeStr.indexOf(','));        // remove the comma and any other characters after it
     unixtime = unixtimeStr.toInt();                                          // convert the string to an integer
-    unixtime = unixtime + millis();
+    millis();
+    raw_offsetStr = payload.substring(payload.indexOf("\"raw_offset\":") + 13);
+    raw_offsetStr = raw_offsetStr.substring(0, raw_offsetStr.indexOf(','));  
+    raw_offset= raw_offsetStr.toInt();
+
     Serial.println(payload);
+    
     Serial.println(unixtimeStr);
+    Serial.print("raw_offset:");
+    Serial.println(raw_offset);
+    Serial.print("unixtime:");
     Serial.println(unixtime);
 
   } else {
@@ -267,7 +286,7 @@ void sendPostWithSensorValues() {
       json += "0";
     } else if (ir_times[i] == "0") {
       ir_times[i] = "{\"unixtime\":";
-      ir_times[i] += String(unixtime+millis());
+      ir_times[i] += String(unixtime+(millis())/ 1000);
       ir_times[i] += "}";
       json += String(ir_times[i]);
     } else {
