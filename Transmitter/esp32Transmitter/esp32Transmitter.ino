@@ -4,8 +4,6 @@
 
 Preferences preferences;
 
-TaskHandle_t getTimeTaskHandle;
-TaskHandle_t postTimeTaskHandle;
 TaskHandle_t checkSensorsTaskHandle;
 void getTimers();
 
@@ -204,12 +202,13 @@ void getTimers() {
   }
   payload = "";
   if (httpCode > 0) {
-
+    millis();
     payload = http.getString();
     unixtimeStr = payload.substring(payload.indexOf("\"unixtime\":") + 11);  // extract the value of the "unixtime" key
     unixtimeStr = unixtimeStr.substring(0, unixtimeStr.indexOf(','));        // remove the comma and any other characters after it
     unixtime = unixtimeStr.toInt();                                          // convert the string to an integer
-    unixtime+= millis()/1000;
+    
+    // unixtime= unixtime+(millis()/1000);
     raw_offsetStr = payload.substring(payload.indexOf("\"raw_offset\":") + 13);
     raw_offsetStr = raw_offsetStr.substring(0, raw_offsetStr.indexOf(','));
     raw_offset = raw_offsetStr.toInt();
@@ -281,6 +280,19 @@ void sendPostWithSensorValues() {
     } else {
       Serial.print("Error on sending PUT: ");
       Serial.println(httpResponseCode);
+      http.end();
+      delay(200);
+
+      http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+
+    int httpResponseCode = http.PUT(json);
+
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      Serial.println(httpResponseCode);
+      Serial.println(response);
+    }
     }
 
     http.end();
