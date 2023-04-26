@@ -163,7 +163,7 @@ void checkSensorsTask(void* parameter) {
     delay(10);
     // vTaskDelay(10 / portTICK_PERIOD_MS);
     digitalWrite(HT12E_TE, LOW);
-    Serial.print("current state has executed order to RF!");
+    // Serial.print("current state has executed order to RF!");
 
     if (isChanged) {
       // Call function to send POST request with current sensor values
