@@ -7,6 +7,7 @@ Preferences preferences;
 TaskHandle_t getTimeTaskHandle;
 TaskHandle_t postTimeTaskHandle;
 TaskHandle_t checkSensorsTaskHandle;
+void getTimers();
 
 /** DEFINE GIOS**/
 #define IR_SENSOR_0 34
@@ -66,9 +67,6 @@ void setup() {
   String ssid = preferences.getString("ssid", "");
   String password = preferences.getString("password", "");
 
-  // for (int i=0; i<numSensors; i++) {
-  //   prevSensorValues[i] = -1;
-  //  }
 
   if (ssid.length() > 0) {
     WiFi.begin(ssid.c_str(), password.c_str());
@@ -80,49 +78,8 @@ void setup() {
       Serial.println(password.c_str());
 
 
-       //receive time now!
-  HTTPClient http;
-  http.begin("http://worldtimeapi.org/api/ip");
-  int httpCode = http.GET();
-
-  int retries = 0;
-  int j = 10;
-  while (httpCode <= 0 && retries < MAX_FAILURES) {
-    Serial.println("Error getting time. Retrying...");
-
-    delay(j);
-    j = (j + 10) * 2;
-    if (j > 720) j = 100;
-    Serial.println(j);
-    httpCode = http.GET();
-    retries++;
-  }
-  payload = "";
-  if (httpCode > 0) {
-
-    payload = http.getString();
-    unixtimeStr = payload.substring(payload.indexOf("\"unixtime\":") + 11);  // extract the value of the "unixtime" key
-    unixtimeStr = unixtimeStr.substring(0, unixtimeStr.indexOf(','));        // remove the comma and any other characters after it
-    unixtime = unixtimeStr.toInt();                                          // convert the string to an integer
-    millis();
-    raw_offsetStr = payload.substring(payload.indexOf("\"raw_offset\":") + 13);
-    raw_offsetStr = raw_offsetStr.substring(0, raw_offsetStr.indexOf(','));  
-    raw_offset= raw_offsetStr.toInt();
-
-    Serial.println(payload);
-    
-    Serial.println(unixtimeStr);
-    Serial.print("raw_offset:");
-    Serial.println(raw_offset);
-    Serial.print("unixtime:");
-    Serial.println(unixtime);
-
-  } else {
-    Serial.println("Error getting time after three attempts.");
-    payload = "\"Error getting time after three attempts.\"";
-  }
-
-  http.end();
+      //receive time now!
+      getTimers();
 
 
 
@@ -160,48 +117,7 @@ void setup() {
   preferences.putString("password", password);
 
   //receive time now!
-  HTTPClient http;
-  http.begin("http://worldtimeapi.org/api/ip");
-  int httpCode = http.GET();
-
-  int retries = 0;
-  int j = 10;
-  while (httpCode <= 0 && retries < MAX_FAILURES) {
-    Serial.println("Error getting time. Retrying...");
-
-    delay(j);
-    j = (j + 10) * 2;
-    if (j > 720) j = 100;
-    Serial.println(j);
-    httpCode = http.GET();
-    retries++;
-  }
-  payload = "";
-  if (httpCode > 0) {
-
-    payload = http.getString();
-    unixtimeStr = payload.substring(payload.indexOf("\"unixtime\":") + 11);  // extract the value of the "unixtime" key
-    unixtimeStr = unixtimeStr.substring(0, unixtimeStr.indexOf(','));        // remove the comma and any other characters after it
-    unixtime = unixtimeStr.toInt();                                          // convert the string to an integer
-    millis();
-    raw_offsetStr = payload.substring(payload.indexOf("\"raw_offset\":") + 13);
-    raw_offsetStr = raw_offsetStr.substring(0, raw_offsetStr.indexOf(','));  
-    raw_offset= raw_offsetStr.toInt();
-
-    Serial.println(payload);
-    
-    Serial.println(unixtimeStr);
-    Serial.print("raw_offset:");
-    Serial.println(raw_offset);
-    Serial.print("unixtime:");
-    Serial.println(unixtime);
-
-  } else {
-    Serial.println("Error getting time after three attempts.");
-    payload = "\"Error getting time after three attempts.\"";
-  }
-
-  http.end();
+  getTimers();
 
 
   xTaskCreate(
@@ -268,7 +184,51 @@ void checkSensorsTask(void* parameter) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);  // Delay for 50 milliseconds
   }
 }
+void getTimers() {
+  //receive time now!
+  HTTPClient http;
+  http.begin("http://worldtimeapi.org/api/ip");
+  int httpCode = http.GET();
 
+  int retries = 0;
+  int j = 10;
+  while (httpCode <= 0 && retries < MAX_FAILURES) {
+    Serial.println("Error getting time. Retrying...");
+
+    delay(j);
+    j = (j + 10) * 2;
+    if (j > 720) j = 100;
+    Serial.println(j);
+    httpCode = http.GET();
+    retries++;
+  }
+  payload = "";
+  if (httpCode > 0) {
+
+    payload = http.getString();
+    unixtimeStr = payload.substring(payload.indexOf("\"unixtime\":") + 11);  // extract the value of the "unixtime" key
+    unixtimeStr = unixtimeStr.substring(0, unixtimeStr.indexOf(','));        // remove the comma and any other characters after it
+    unixtime = unixtimeStr.toInt();                                          // convert the string to an integer
+    unixtime+= millis()/1000;
+    raw_offsetStr = payload.substring(payload.indexOf("\"raw_offset\":") + 13);
+    raw_offsetStr = raw_offsetStr.substring(0, raw_offsetStr.indexOf(','));
+    raw_offset = raw_offsetStr.toInt();
+
+    Serial.println(payload);
+
+    Serial.println(unixtimeStr);
+    Serial.print("raw_offset:");
+    Serial.println(raw_offset);
+    Serial.print("unixtime:");
+    Serial.println(unixtime);
+
+  } else {
+    Serial.println("Error getting time after three attempts.");
+    payload = "\"Error getting time after three attempts.\"";
+  }
+
+  http.end();
+}
 void sendPostWithSensorValues() {
 
   // Create JSON object with sensor values
@@ -286,7 +246,7 @@ void sendPostWithSensorValues() {
       json += "0";
     } else if (ir_times[i] == "0") {
       ir_times[i] = "{\"unixtime\":";
-      ir_times[i] += String(unixtime+(millis())/ 1000);
+      ir_times[i] += String(unixtime + (millis()) / 1000);
       ir_times[i] += "}";
       json += String(ir_times[i]);
     } else {
