@@ -76,6 +76,7 @@ void loop() {
     }
   } else {
     dataText = "RF ERROR!       ";
+    index = 0;
   }
   delay(500);
   if (index + 16 < dataText.length()||index + 16 < dataTimer.length()) {
